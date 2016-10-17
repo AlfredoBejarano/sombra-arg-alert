@@ -27,4 +27,4 @@ Android app that goes to http://amomentincrime.com for you and notifies you if t
                        vMB :@B@ :BO7
                            ,B@B
 
-* la que tiene la información, tiene el poder*
+*la que tiene la información, tiene el poder*
