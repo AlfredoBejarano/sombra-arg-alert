@@ -28,7 +28,7 @@ import javax.xml.parsers.ParserConfigurationException;
 public class ParserUtils extends AsyncTask<Void, String, String>{
 
     private Context context;
-    private static String fileName = "sombra";
+    private static String key = "sombra-percentage";
     public ParserUtils(Context context) { this.context = context; }
 
     /**
@@ -38,7 +38,7 @@ public class ParserUtils extends AsyncTask<Void, String, String>{
         String body = String.valueOf(doInBackground());
         Pattern pattern = Pattern.compile("\\d{2}.\\d{4}");
         Matcher matcher = pattern.matcher(body);
-        return matcher.find() ? Double.valueOf(matcher.group(0)) : 100.00;
+        return matcher.find() ? Double.valueOf(matcher.group(0)) : 0;
     }
 
     /**
@@ -48,18 +48,16 @@ public class ParserUtils extends AsyncTask<Void, String, String>{
      * @throws ParserConfigurationException - If the value can't be retrieved.
      */
     private boolean storeValue() throws IOException, ParserConfigurationException {
-        SharedPreferences sharedPreferences = context.getSharedPreferences(fileName, Context.MODE_PRIVATE);
-        Double value = getPercentage();
+        SharedPreferences sharedPreferences = context.getSharedPreferences(context.getApplicationInfo().name, Context.MODE_PRIVATE);
 
-        if(sharedPreferences.contains(fileName)) {
-            Double previous = Double.valueOf(sharedPreferences.getString(fileName, "0"));
-            if(value > previous) {
-                return sharedPreferences.edit().putString(fileName, String.valueOf(value)).commit();
-            } else {
-                return false;
-            }
+        String value = String.valueOf(getPercentage());
+        String previous = sharedPreferences.getString(key, String.valueOf(value));
+
+        if(previous.equals(value)) {
+            return false;
         } else {
-            return sharedPreferences.edit().putString(fileName, String.valueOf(value)).commit();
+            sharedPreferences.edit().putString(key, String.valueOf(value)).commit();
+            return true;
         }
     }
 
@@ -67,7 +65,7 @@ public class ParserUtils extends AsyncTask<Void, String, String>{
      * Sends a notification to the user, alerting for percentage changes.
      */
     public void notifyPercentageChange() throws IOException, ParserConfigurationException {
-        if(storeValue() && getPercentage() < 100) {
+        if(storeValue()) {
             NotificationCompat.Builder builder = new NotificationCompat.Builder(context)
                     .setSmallIcon(R.drawable.ic_notification)
                     .setContentTitle("¡Ha aumentado el porcentaje!")
@@ -92,30 +90,6 @@ public class ParserUtils extends AsyncTask<Void, String, String>{
 
             notificationManager.notify(23, notification);
 
-        } else if(storeValue() && getPercentage() >= 100) {
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(context)
-                    .setSmallIcon(R.drawable.ic_notification)
-                    .setContentTitle("¡El porcentaje ha llegado al 100%!")
-                    .setContentText("Where's sombra when you need her?");
-
-            Intent intent = new Intent(context, context.getClass());
-
-            TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
-            stackBuilder.addParentStack(context.getClass());
-            stackBuilder.addNextIntent(intent);
-            PendingIntent pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
-
-            builder.setContentIntent(pendingIntent);
-
-            NotificationManager notificationManager = (NotificationManager) context.getSystemService(context.NOTIFICATION_SERVICE);
-
-            builder.setVibrate(new long[] { 1000, 1000, 1000, 1000, 1000 });
-            builder.setLights(context.getResources().getColor(R.color.colorAccent), 3000, 3000);
-
-            Notification notification = builder.build();
-            notification.sound = Uri.parse("android.resource://" + context.getPackageName() + "/" + R.raw.recognition);
-
-            notificationManager.notify(23, notification);
         }
     }
 
